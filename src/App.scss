@@ -1,0 +1,108 @@
+@import 'math.scss';
+
+@function getGap($length, $ratio){
+  $l: $length * 2;
+  
+  @return $l / (12 + 12 * $ratio); 
+}
+
+
+$width: 250px;
+$height: $width * sqrt(3);
+$rotateY: round(($width * 2 * 2 / 3 ) * sqrt(3) / 2);  
+$containerX: 2 * $width;
+$containerY: 2 * $rotateY;
+$radius: getGap($width, 0.4) / 2;     //0.5 是gap 和 直径的比
+$gap: 2 * 0.4 * $radius;
+
+$red : pink;
+$orange : #FFA500;
+$yellow : #FFFF00;
+$green : #008000;
+$bluegreen : #00FFFF;
+$blue : #0000FF;
+$purple : #800080;
+
+$bgcolorlist : (
+    0: $red,
+    1: $orange,
+    2: $purple,
+    3: $green,
+    4: $bluegreen,
+    5: $blue,
+    6: $yellow);
+
+.App {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  margin: auto;
+  // width: $containerX;
+  // height: $containerY;
+  background: black; }
+
+.triangle {
+  position: absolute;
+  left: 50%;
+  top: 0%;
+  // border-width: 0px $width $height $width;
+  border-style: solid;
+  border-color: transparent transparent yellow transparent;
+  // margin-left: -$width; 
+}
+
+.triangle-1{
+  // transform-origin: $width $rotateY;
+  transform: rotate(180deg);
+}
+
+.chess{
+  position: absolute;
+  width: 2 * $radius;
+  height: 2 * $radius;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: black;
+  color: white;
+  font-size: 10px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+}
+@each $i, $color in $bgcolorlist {
+  [class|="chess chess-#{$i}"]{
+    background:$color;
+  }
+}
+
+// @for $k from 0 to 6{
+//   @for $i from 0 to 4{
+//     @for $j from 0 to ($i+1){
+//       .chess-#{$k}-#{$i}-#{$j}{
+//       left: cos(60deg * $k) * ($width  -  $width * 2 / (4 * 3 * 2) * $i + $j * $width * 2 / (4 * 3) - $width) - sin(60deg * $k) * (($i * $gap + 2 * $radius * $i) * sqrt(3) / 2 - $rotateY) + $width;
+//       top: sin(60deg * $k) * ($width  -  $width * 2 / (4 * 3 * 2) * $i + $j * $width * 2 / (4 * 3) - $width) + cos(60deg * $k) * (($i * $gap + 2 * $radius * $i) * sqrt(3) / 2 - $rotateY) + $rotateY; 
+//       }
+//     }
+//   }
+// }
+
+// @for $i from 0 to 5{
+//   @for $j from 0 to ($i + 5){
+//     .hex-#{$i}-#{$j}{
+//       left: 2 * $width / 3  - $width * 2 / (4 * 3 * 2) * $i + ($gap + 2 * $radius) * $j; 
+//       top: $rotateY / 2 + $width * 2 / (4 * 3) * sqrt(3) / 2 * $i;
+//     }
+//   }
+// }
+
+// @for $i from 5 to 9{
+//   @for $j from 0 to (13 - $i){    // 8  7  6  5          5 6 7 8
+//     .hex-#{$i}-#{$j}{
+//       left:  2 * $width / 3 - $width * 2 / (4 * 3 * 2) * 3 + $width * 2 / (4 * 3 * 2) * ($i - 5) + ($gap + 2 * $radius) * $j;
+//       top: $rotateY * 3 / 2 - $width * 2 / (4 * 3) * sqrt(3) / 2 * 3 + $width * 2 / (4 * 3) * sqrt(3) / 2 * ($i - 5);
+//     }
+//   }
+// }
