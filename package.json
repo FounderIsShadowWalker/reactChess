@@ -16,6 +16,7 @@
     "test": "react-scripts test --env=jsdom",
     "eject": "react-scripts eject"
   },
+  "homepage": "./",
   "devDependencies": {
     "node-sass": "^4.7.2",
     "sass-loader": "^6.0.6"
