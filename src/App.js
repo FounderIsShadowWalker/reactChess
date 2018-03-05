@@ -243,7 +243,7 @@ class App extends Component {
   }
 
   chessMove = (key) => (e) => {
-    let { press, selected, position, destination } = this.state;
+    let { press, selected, position, destination, turn, colors } = this.state;
     let start = 0, end = 0, startIndex = 0, endIndex;
 
 
@@ -279,6 +279,7 @@ class App extends Component {
       this.setState({
         press: false,
         destination: [],
+        turn: (turn + 1) % colors.length,
         position: this.isOccupy([
           ...position.slice(0, startIndex),
           movedChess,
@@ -318,95 +319,106 @@ class App extends Component {
     let { locate } = itemMove;
     let axises = locate.split('-');
     let nextJump = null;
+    let repeatNode = false;
     //从左往右分别是 x-y-z   左上45deg 右下45deg  收集三条线上的点
     let arrs = [[], [], []];
-    position.map((item) => {
-      if (!item.isChess && item.locate != itemMove.locate) {
-        let { locate } = item;
-        let itemAxises = locate.split('-');
-        if (itemAxises[0] == axises[0]) {
-          arrs[0].push(item);
-        } else if (itemAxises[1] == axises[1]) {
-          arrs[1].push(item);
-        } else if (itemAxises[2] == axises[2]) {
-          arrs[2].push(item);
-        }
-      }
-    });
 
-    //对三条线上的点排序
-    arrs = arrs.map((arr) => {
-      arr.push(itemMove);
-      arr = arr.sort((arg1, arg2) => {
-        return arg1.locate.split('-').slice(0, 2).join('') * 1 > arg2.locate.split('-').slice(0, 2).join('') * 1 ? 1 : -1;
-      });
-      return arr;
+    // console.log(itemMove, passNode, '0000000000');
+    repeatNode = passNode.filter((node) => {
+      return node.key === itemMove.key
     })
 
-    //获取3条线上6个点
-    arrs.map((arr, index) => {
-      let pos = -1;
-      arr.filter((item, i) => {
-        return item.locate == itemMove.locate && (pos = i);
+    if (repeatNode.length < 2) {
+
+      position.map((item) => {
+        if (!item.isChess && item.locate != itemMove.locate) {
+          let { locate } = item;
+          let itemAxises = locate.split('-');
+          if (itemAxises[0] == axises[0]) {
+            arrs[0].push(item);
+          } else if (itemAxises[1] == axises[1]) {
+            arrs[1].push(item);
+          } else if (itemAxises[2] == axises[2]) {
+            arrs[2].push(item);
+          }
+        }
+      });
+
+      //对三条线上的点排序
+      arrs = arrs.map((arr) => {
+        arr.push(itemMove);
+        arr = arr.sort((arg1, arg2) => {
+          return arg1.locate.split('-').slice(0, 2).join('') * 1 > arg2.locate.split('-').slice(0, 2).join('') * 1 ? 1 : -1;
+        });
+        return arr;
       })
 
-      let left = pos - 1, right = pos + 1;
-      for (; left >= 0;) {
-        if (arr[left].isOccupy) {
-          console.log('发现了基点', arr[left], '起始点', itemMove);
-          let flag = false;
-          let end = left * 2 - pos;
-          if (end < 0 || end >= arr.length) { console.log('对称点超出棋盘', '对称点是:', arr[left], '*****'); break; }
-          for (let start = left + (end - left) / Math.abs(end - left);
-            start >= Math.min(left, end) && start <= Math.max(left, end);
-            start = start + (end - left) / Math.abs(end - left)) {
-            if (arr[start].isOccupy) {
-              flag = true;
-              console.log('出现了干扰点', arr[start], '*****');
-              break;
+      //获取3条线上6个点
+      arrs.map((arr, index) => {
+        let pos = -1;
+        arr.filter((item, i) => {
+          return item.locate == itemMove.locate && (pos = i);
+        })
+
+        let left = pos - 1, right = pos + 1;
+        for (; left >= 0;) {
+          if (arr[left].isOccupy) {
+            console.log('发现了基点', arr[left], '起始点', itemMove);
+            let flag = false;
+            let end = left * 2 - pos;
+            if (end < 0 || end >= arr.length) { console.log('对称点超出棋盘', '对称点是:', arr[left], '*****'); break; }
+            for (let start = left + (end - left) / Math.abs(end - left);
+              start >= Math.min(left, end) && start <= Math.max(left, end);
+              start = start + (end - left) / Math.abs(end - left)) {
+              if (arr[start].isOccupy) {
+                flag = true;
+                console.log('出现了干扰点', arr[start], '*****');
+                break;
+              }
             }
-          }
-          if (!flag) {
-            path.push(arr[end]);
-          }
-          flag = false;
-          break;
-        }
-        else {
-          left--;
-        }
-      }
-
-      for (; right < arr.length;) {
-        if (arr[right].isOccupy) {
-          console.log('发现了基点', arr[right], '起始点', itemMove);
-          let flag = false;
-          let end = right * 2 - pos;
-          if (end < 0 || end >= arr.length) { console.log('对称点超出棋盘', '对称点是:', arr[right], '*****'); break; }
-          for (let start = right + (end - right) / Math.abs(end - right);
-            start >= Math.min(right, end) && start <= Math.max(right, end);
-            start = start + (end - right) / Math.abs(end - right)) {
-            if (arr[start].isOccupy) {
-              flag = true;
-              console.log('出现了干扰点', arr[start], '*****');
-              break;
+            if (!flag) {
+              path.push(arr[end]);
             }
+            flag = false;
+            break;
           }
-          if (!flag) {
-            path.push(arr[end]);
+          else {
+            left--;
           }
-          flag = false;
-          break;
         }
-        else {
-          right++;
+
+        for (; right < arr.length;) {
+          if (arr[right].isOccupy) {
+            console.log('发现了基点', arr[right], '起始点', itemMove);
+            let flag = false;
+            let end = right * 2 - pos;
+            if (end < 0 || end >= arr.length) { console.log('对称点超出棋盘', '对称点是:', arr[right], '*****'); break; }
+            for (let start = right + (end - right) / Math.abs(end - right);
+              start >= Math.min(right, end) && start <= Math.max(right, end);
+              start = start + (end - right) / Math.abs(end - right)) {
+              if (arr[start].isOccupy) {
+                flag = true;
+                console.log('出现了干扰点', arr[start], '*****');
+                break;
+              }
+            }
+            if (!flag) {
+              path.push(arr[end]);
+            }
+            flag = false;
+            break;
+          }
+          else {
+            right++;
+          }
         }
-      }
 
-    })
+      })
 
-    console.log('当前点下获取到总路径', path);
-    allPath.push(...path);
+      console.log('当前点下获取到总路径', path);
+      allPath.push(...path);
+
+    }
 
     if (allPath.length >= 1) {
       nextJump = allPath[0];
@@ -415,8 +427,8 @@ class App extends Component {
       position = position.map((item, index) => {
         if (!item.isChess) {
           if (item.locate === nextJump.locate) {
-            console.log('不好意思 你要变成下一跳了', item, '********************************');
-            position[index].isOccupy = true;
+            console.log('不好意思 你要变成下一跳了', item, '********************************', '已经存在的节点', passNode);
+            // position[index].isOccupy = true;
           }
         }
         return item;
@@ -436,7 +448,7 @@ class App extends Component {
       `${axies[0] * 1}-${axies[1] * 1 - 1}-${axies[2] * 1 - 1}`,
       `${axies[0] * 1}-${axies[1] * 1 + 1}-${axies[2] * 1 + 1}`,
       `${axies[0] * 1 - 1}-${axies[1] * 1}-${axies[2] * 1 + 1}`,
-      `${axies[0] * 1 + 1}-${axies[1] * 1 + 1}-${axies[2] * 1 - 1}`,
+      `${axies[0] * 1 + 1}-${axies[1] * 1}-${axies[2] * 1 - 1}`,
       `${axies[0] * 1 - 1}-${axies[1] * 1 - 1}-${axies[2] * 1}`,
       `${axies[0] * 1 + 1}-${axies[1] * 1 + 1}-${axies[2] * 1}`,
     ]
@@ -484,7 +496,6 @@ class App extends Component {
       this.setState({
         lastPress: cloneDeep(tempo),
         press: true,
-        turn: (turn + 1) % colors.length,
         position: [
           ...position.slice(0, index),
           Object.assign({}, tempo, { style }),
