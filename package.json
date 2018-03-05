@@ -4,6 +4,7 @@
   "private": true,
   "dependencies": {
     "clone-deep": "^3.0.1",
+    "express": "^4.16.2",
     "eyeglass-math": "^1.0.1",
     "react": "^16.2.0",
     "react-dom": "^16.2.0",
