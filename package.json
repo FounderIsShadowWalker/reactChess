@@ -16,7 +16,7 @@
     "test": "react-scripts test --env=jsdom",
     "eject": "react-scripts eject"
   },
-  "homepage": "https://founderisshadowwalker.github.io/reactChess/",
+  "homepage": "https://founderisshadowwalker.github.io",
   "devDependencies": {
     "node-sass": "^4.7.2",
     "sass-loader": "^6.0.6"
