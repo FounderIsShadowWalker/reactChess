@@ -687,7 +687,7 @@ class App extends Component {
             zIndex: lastPress.style.zIndex
           }}
         >
-          {locate}
+          {/* {locate} */}
         </div >
       }
       else {
@@ -697,7 +697,7 @@ class App extends Component {
           onClick={isChess ? this.chessClick(key) : this.chessMove(key)}
           style={{ ...style }}
         >
-          {locate}
+          {/* {locate} */}
         </div >
       }
       return reactDom
