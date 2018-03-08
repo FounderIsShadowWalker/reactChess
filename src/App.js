@@ -1,5 +1,7 @@
 import React, { Component } from 'react';
+import { Motion, spring } from 'react-motion';
 import cloneDeep from 'clone-deep';
+import { uniq } from 'lodash';
 import './App.scss';
 
 const width = 300;
@@ -8,6 +10,7 @@ const rotateY = Math.round((width * 2 * 2 / 3) * Math.sqrt(3) / 2);
 const radius = width * 2 / (12 + 12 * 0.4) / 2;
 const gap = 2 * 0.4 * radius;
 
+let isChessPathFind = false;
 
 class App extends Component {
 
@@ -15,6 +18,7 @@ class App extends Component {
     // chesses: [],
     position: [],
     lastPress: false,
+    nextPress: false,
     selected: {
       key: '',
       style: {
@@ -52,7 +56,10 @@ class App extends Component {
         targetColor: 'brown',
         targetArray: []
       }
-    }
+    },
+    AnimatePathStyle: [],
+    nowStyle: {},
+    nowStyleIndex: 0,
   }
 
   getChess = () => {
@@ -124,6 +131,8 @@ class App extends Component {
 
     position = this.sort(position);
 
+    console.log(position);
+
     this.setTarget(position);
 
     position = this.isOccupy(position);
@@ -147,6 +156,7 @@ class App extends Component {
     })
   }
 
+
   isOccupy = (position) => {
 
     let boards = position.filter((item) => {
@@ -169,6 +179,7 @@ class App extends Component {
 
     return boards.concat(chesses);
   }
+
 
   setMark = (prop, arr) => {
     let lastTop = arr[0].style[prop], y = 0;
@@ -213,6 +224,7 @@ class App extends Component {
     return position;
   }
 
+
   componentDidMount() {
     this.setState({
       ...this.getChess()
@@ -240,6 +252,25 @@ class App extends Component {
     });
 
     return count === targetArray.length ? true : false
+  }
+
+  getAnimatePathStyle = (pathLocate, destination) => {
+    console.log('计算style');
+    console.log(pathLocate, destination);
+
+    //去掉 起点
+    pathLocate.splice(0, 1);
+
+    return pathLocate.map((locate) => {
+
+      let exist = destination.filter(des => {
+        return des.locate == locate;
+      })
+
+      if (exist.length > 0) {
+        return exist[0].style;
+      }
+    })
   }
 
   chessMove = (key) => (e) => {
@@ -276,10 +307,17 @@ class App extends Component {
         }
       }
 
+      let styles = this.getAnimatePathStyle(this.defineAnimatePath(destination, start, end).reverse(), destination);
+
+
+
       this.setState({
         press: false,
+        nextPress: movedChess,
         destination: [],
+        nowStyle: styles[this.state.nowStyleIndex],
         turn: (turn + 1) % colors.length,
+        AnimatePathStyle: styles,
         position: this.isOccupy([
           ...position.slice(0, startIndex),
           movedChess,
@@ -288,10 +326,67 @@ class App extends Component {
       }, () => {
         let result = this.isWin(movedChess.style.background, this.state.position);
         result && alert(`${movedChess.style.background} win`);
-      })
+        let AnimatePathStyle = this.state.AnimatePathStyle;
+        // console.log('新鲜的', AnimatePathStyle);
+
+        styles.map((item, index) => {
+          console.log('你要跳几段', index)
+          setTimeout(() => {
+            console.log('我跳了几段', index, )
+            // this.setState((prevState) => {
+            //   prevState['nowStyle'] = styles[index]
+            // })
+
+            this.setState({
+              nowStyle: styles[index]
+            })
+          }, 600 * (index + 1));
+        });
+      });
     }
   }
 
+  getParents = (locate, path) => {
+    let parents = path.filter((chess) => {
+      return locate === chess.locate
+    })
+
+    if (parents.length < 1) {
+      console.log(`你这个点${locate}没有parent`, parents, );
+    }
+    return parents[0]['parent'];
+  }
+
+  scanPath = (start, end, chesses, path) => {
+    //debugger;
+    let nextLists = this.getParents(start, chesses);
+    let nextJump = false;
+
+    for (let i = 0; i < nextLists.length; i++) {
+      nextJump = nextLists[i];
+      if (path.indexOf(nextJump) < 0) {
+        !isChessPathFind && path.push(nextJump);
+
+        if (nextJump === end) {
+          isChessPathFind = true;
+          return path;
+        }
+
+        !isChessPathFind && this.scanPath(nextJump, end, chesses, path);
+      }
+
+    }
+    !isChessPathFind && path.pop();
+    return path;
+  }
+
+  defineAnimatePath = (path, start, end) => {
+    console.log('不要算跳棋动画的啊');
+    console.log('path:', path, '起点:', start, '终点:', end);        //start 是跳棋起跳点    //end 是跳棋落点
+    //console.log(this.getParents(end.locate, path))
+
+    return this.scanPath(end.locate, start.locate, path, [end.locate]);
+  }
 
   resetChessColor = () => {
     let { position, lastPress } = this.state;
@@ -313,22 +408,23 @@ class App extends Component {
 
   }
 
+  exist = (itemMove, passNode) => {
+    return passNode.filter((node) => {
+      return node.key === itemMove.key
+    })
+  }
+
   getValidPoint = (itemMove, position, allPath, passNode) => {
     console.log('清算点了 ============================================', '现在的点是', itemMove);
     let path = [];
     let { locate } = itemMove;
     let axises = locate.split('-');
     let nextJump = null;
-    let repeatNode = false;
     //从左往右分别是 x-y-z   左上45deg 右下45deg  收集三条线上的点
     let arrs = [[], [], []];
 
     // console.log(itemMove, passNode, '0000000000');
-    repeatNode = passNode.filter((node) => {
-      return node.key === itemMove.key
-    })
-
-    if (repeatNode.length < 2) {
+    if (this.exist(itemMove, passNode).length <= 1) {
 
       position.map((item) => {
         if (!item.isChess && item.locate != itemMove.locate) {
@@ -416,23 +512,27 @@ class App extends Component {
       })
 
       console.log('当前点下获取到总路径', path);
+
+      //给所有的path下的节点 加上parent
+      path = path.map((node) => {
+        if (!node['parent']) {
+          node['parent'] = [];
+        }
+        node['parent'].push(itemMove.locate);
+
+        return node;
+      })
+
       allPath.push(...path);
 
     }
 
     if (allPath.length >= 1) {
       nextJump = allPath[0];
+
       passNode.push(nextJump);
+
       allPath.splice(0, 1);
-      position = position.map((item, index) => {
-        if (!item.isChess) {
-          if (item.locate === nextJump.locate) {
-            console.log('不好意思 你要变成下一跳了', item, '********************************', '已经存在的节点', passNode);
-            // position[index].isOccupy = true;
-          }
-        }
-        return item;
-      });
     }
 
     return nextJump ? this.getValidPoint(nextJump, position, allPath, passNode) : passNode;
@@ -441,7 +541,6 @@ class App extends Component {
   cacalutePath = (itemMove, position) => {
     let path = this.getValidPoint(itemMove, position, [], []);
     //最后加上距离为1的点
-
     let { locate } = itemMove;
     let axies = locate.split('-');
     let aroundPathLocate = [
@@ -456,11 +555,16 @@ class App extends Component {
     position.map((item, index) => {
       if (!item.isChess && !item.isOccupy) {
         if (aroundPathLocate.indexOf(item.locate) > -1) {
+          //console.log(item, '我错了', itemMove.locate);
+          item['parent'] = [itemMove.locate];
           path.push(item);
         }
       }
     });
 
+    //这里对path去重
+
+    path = this.uniqPath(path);
 
     this.setState({
       destination: path
@@ -468,11 +572,50 @@ class App extends Component {
     console.log('有效点:', path);
   }
 
+  uniqPath = (path) => {
+    let newPath = [];
+
+    path.length > 0 && path.map((pathNode) => {
+      let index;
+      let tempoPath = newPath.filter((keyPathNode, i) => {
+        if (pathNode.key === keyPathNode.key) {
+          index = i;
+          return true;
+        } else {
+          return false;
+        }
+      })
+
+      if (tempoPath.length === 0) {
+        if (!pathNode['parent']) pathNode['parent'] = [];
+        newPath.push(pathNode);
+
+      } else {
+        let firstPathNode = cloneDeep(newPath[index]);
+        for (let i = 0; i < tempoPath.length; i++) {
+          firstPathNode['parent'] = firstPathNode['parent'].concat(tempoPath[i]['parent']);
+        }
+
+        firstPathNode['parent'] = uniq(firstPathNode['parent']);
+        newPath[index] = firstPathNode;
+      }
+    })
+
+    return newPath;
+  }
+
   chessClick = (key) => (e) => {
     let { position, lastPress, selected, turn, colors } = this.state;
     let index = -1;
 
+    isChessPathFind = false;
     position = this.isOccupy(position);
+
+
+    position = position.map((item) => {
+      item['parent'] = [];
+      return item;
+    });
 
     if (lastPress) {
       position = this.resetChessColor();
@@ -492,10 +635,13 @@ class App extends Component {
       //计算路径
       this.cacalutePath(position[index], position);
 
-
       this.setState({
         lastPress: cloneDeep(tempo),
         press: true,
+        nextPress: false,
+        nowStyleIndex: 0,
+        nowStyle: { left: tempo.style.left, top: tempo.style.top },
+        AnimatePathStyle: [],
         position: [
           ...position.slice(0, index),
           Object.assign({}, tempo, { style }),
@@ -511,9 +657,11 @@ class App extends Component {
   render() {
     window.state = this.state;
 
-    let { position, destination } = this.state;
+    let { position, destination, lastPress, press, nextPress, AnimatePathStyle, nowStyle } = this.state;
+
     let postionChess = position.map((item, index) => {
       let { key, style, isChess, locate } = item;
+      let reactDom = null;
 
       if (!isChess) {
         let pathExist = destination.filter((item, index) => {
@@ -526,14 +674,33 @@ class App extends Component {
         }))
       }
 
-      return <div
-        key={key}
-        className="chess"
-        onClick={isChess ? this.chessClick(key) : this.chessMove(key)}
-        style={{ ...style }}
-      >
-        {/* {locate} */}
-      </div >
+
+      if (isChess && lastPress.key === key && nextPress) {
+        reactDom = <div
+          key={key}
+          className="chess"
+          onClick={isChess ? this.chessClick(key) : this.chessMove(key)}
+          style={{
+            left: nowStyle.left,
+            top: nowStyle.top,
+            background: lastPress.style.background,
+            zIndex: lastPress.style.zIndex
+          }}
+        >
+          {locate}
+        </div >
+      }
+      else {
+        reactDom = <div
+          key={key}
+          className="chess"
+          onClick={isChess ? this.chessClick(key) : this.chessMove(key)}
+          style={{ ...style }}
+        >
+          {locate}
+        </div >
+      }
+      return reactDom
     });
 
 
