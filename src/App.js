@@ -627,31 +627,31 @@ class App extends Component {
 
     let tempo = position[index];
 
-    if (tempo.style.background === colors[turn]) {
+    // if (tempo.style.background === colors[turn]) {
 
-      const style = Object.assign({}, tempo.style, selected.style);
+    const style = Object.assign({}, tempo.style, selected.style);
 
 
-      //计算路径
-      this.cacalutePath(position[index], position);
+    //计算路径
+    this.cacalutePath(position[index], position);
 
-      this.setState({
-        lastPress: cloneDeep(tempo),
-        press: true,
-        nextPress: false,
-        nowStyleIndex: 0,
-        nowStyle: { left: tempo.style.left, top: tempo.style.top },
-        AnimatePathStyle: [],
-        position: [
-          ...position.slice(0, index),
-          Object.assign({}, tempo, { style }),
-          ...position.slice(index + 1)
-        ],
-        selected: Object.assign({}, selected, { key })
-      })
-    } else {
-      alert(`请${colors[turn]}走!`)
-    }
+    this.setState({
+      lastPress: cloneDeep(tempo),
+      press: true,
+      nextPress: false,
+      nowStyleIndex: 0,
+      nowStyle: { left: tempo.style.left, top: tempo.style.top },
+      AnimatePathStyle: [],
+      position: [
+        ...position.slice(0, index),
+        Object.assign({}, tempo, { style }),
+        ...position.slice(index + 1)
+      ],
+      selected: Object.assign({}, selected, { key })
+    })
+    // } else {
+    //   alert(`请${colors[turn]}走!`)
+    // }
   }
 
   render() {
